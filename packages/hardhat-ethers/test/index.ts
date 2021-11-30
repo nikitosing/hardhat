@@ -455,6 +455,80 @@ describe("Ethers plugin", function () {
           });
         });
 
+        describe("by Artifact", function () {
+          it("should return a contract factory", async function () {
+            const contract = await this.env.ethers.getContractFactory(
+              greeterArtifact
+            );
+
+            assert.containsAllKeys(contract.interface.functions, [
+              "setGreeting(string)",
+              "greet()",
+            ]);
+
+            assert.equal(
+              await contract.signer.getAddress(),
+              await signers[0].getAddress()
+            );
+          });
+
+          it("should link a library", async function () {
+            const libraryFactory = await this.env.ethers.getContractFactory(
+              "TestLibrary"
+            );
+            const library = await libraryFactory.deploy();
+
+            const testContractLibArtifact =
+              await this.env.artifacts.readArtifact("TestContractLib");
+
+            const contractFactory = await this.env.ethers.getContractFactory(
+              testContractLibArtifact,
+              { libraries: { TestLibrary: library.address } }
+            );
+
+            assert.equal(
+              await contractFactory.signer.getAddress(),
+              await signers[0].getAddress()
+            );
+            const numberPrinter = await contractFactory.deploy();
+            const someNumber = 50;
+            assert.equal(
+              await numberPrinter.callStatic.printNumber(someNumber),
+              someNumber * 2
+            );
+          });
+
+          it("Should be able to send txs and make calls", async function () {
+            const Greeter = await this.env.ethers.getContractFactory(
+              greeterArtifact
+            );
+            const greeter = await Greeter.deploy();
+
+            assert.equal(await greeter.functions.greet(), "Hi");
+            await greeter.functions.setGreeting("Hola");
+            assert.equal(await greeter.functions.greet(), "Hola");
+          });
+
+          describe("with custom signer", function () {
+            it("should return a contract factory connected to the custom signer", async function () {
+              const contract = await this.env.ethers.getContractFactory(
+                greeterArtifact,
+                signers[1]
+              );
+
+              assert.containsAllKeys(contract.interface.functions, [
+                "setGreeting(string)",
+                "greet()",
+              ]);
+
+              assert.equal(
+                await contract.signer.getAddress(),
+                await signers[1].getAddress()
+              );
+            });
+          });
+        });
+
         describe("by abi and bytecode", function () {
           it("should return a contract factory", async function () {
             // It's already compiled in artifacts/
@@ -578,6 +652,51 @@ describe("Ethers plugin", function () {
             it("Should return an instance of a contract associated to a custom signer", async function () {
               const contract = await this.env.ethers.getContractAt(
                 "Greeter",
+                deployedGreeter.address,
+                signers[1]
+              );
+
+              assert.equal(
+                await contract.signer.getAddress(),
+                await signers[1].getAddress()
+              );
+            });
+          });
+        });
+
+        describe("by artifact and address", function () {
+          it("Should return an instance of a contract", async function () {
+            const contract = await this.env.ethers.getContractAt(
+              greeterArtifact,
+              deployedGreeter.address
+            );
+
+            assert.containsAllKeys(contract.functions, [
+              "setGreeting(string)",
+              "greet()",
+            ]);
+
+            assert.equal(
+              await contract.signer.getAddress(),
+              await signers[0].getAddress()
+            );
+          });
+
+          it("Should be able to send txs and make calls", async function () {
+            const greeter = await this.env.ethers.getContractAt(
+              greeterArtifact,
+              deployedGreeter.address
+            );
+
+            assert.equal(await greeter.functions.greet(), "Hi");
+            await greeter.functions.setGreeting("Hola");
+            assert.equal(await greeter.functions.greet(), "Hola");
+          });
+
+          describe("with custom signer", function () {
+            it("Should return an instance of a contract associated to a custom signer", async function () {
+              const contract = await this.env.ethers.getContractAt(
+                greeterArtifact,
                 deployedGreeter.address,
                 signers[1]
               );

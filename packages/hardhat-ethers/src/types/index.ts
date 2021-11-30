@@ -1,4 +1,5 @@
 import type * as ethers from "ethers";
+import { Artifact } from "hardhat/src/types";
 
 import type { SignerWithAddress } from "../signers";
 
@@ -12,9 +13,10 @@ export interface FactoryOptions {
 }
 
 export declare function getContractFactory(
-  name: string,
+  nameOrArtifact: string | Artifact,
   signerOrOptions?: ethers.Signer | FactoryOptions
 ): Promise<ethers.ContractFactory>;
+
 export declare function getContractFactory(
   abi: any[],
   bytecode: ethers.utils.BytesLike,
@@ -26,7 +28,7 @@ export interface HardhatEthersHelpers {
 
   getContractFactory: typeof getContractFactory;
   getContractAt: (
-    nameOrAbi: string | any[],
+    nameOrArtifactOrAbi: string | Artifact | any[],
     address: string,
     signer?: ethers.Signer
   ) => Promise<ethers.Contract>;

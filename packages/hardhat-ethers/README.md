@@ -54,14 +54,23 @@ interface FactoryOptions {
   libraries?: Libraries;
 }
 
-function getContractFactory(name: string): Promise<ethers.ContractFactory>;
+function getContractFactory(
+  nameOrArtifact: string | Artifact,
+  signerOrOptions?: ethers.Signer | FactoryOptions
+): Promise<ethers.ContractFactory>;
 
-function getContractFactory(name: string, signer: ethers.Signer): Promise<ethers.ContractFactory>;
+function getContractFactory(
+  abi: any[],
+  bytecode: ethers.utils.BytesLike,
+  signer?: ethers.Signer
+): Promise<ethers.ContractFactory>;
 
-function getContractFactory(name: string, factoryOptions: FactoryOptions): Promise<ethers.ContractFactory>;
-
-
-function getContractAt(nameOrAbi: string | any[], address: string, signer?: ethers.Signer): Promise<ethers.Contract>;
+function getContractAt(
+  hre: HardhatRuntimeEnvironment,
+  nameOrArtifactOrAbi: string | Artifact | any[],
+  address: string,
+  signer?: ethers.Signer
+): Promise<ethers.Contract>;
 
 function getSigners() => Promise<ethers.Signer[]>;
 
