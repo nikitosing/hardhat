@@ -213,6 +213,37 @@ describe("Hardhat module", function () {
             );
           });
         });
+
+        describe("should increment the coinbase balance", async () => {
+          const blockReward = new BN(ethers.utils.parseEther("2").toString());
+          const getCoinbaseBalance = async (): Promise<BN> => {
+            return rpcQuantityToBN(
+              await this.ctx.provider.send("eth_getBalance", [
+                await this.ctx.provider.send("eth_coinbase"),
+              ])
+            );
+          };
+          it("when not given any arguments", async () => {
+            const previousBalance = await getCoinbaseBalance();
+            await this.ctx.provider.send("hardhat_mine");
+            const currentBalance = await getCoinbaseBalance();
+            assert(
+              currentBalance.eq(previousBalance.add(blockReward)),
+              `expected current balance (${currentBalance.toString()}) to equal previous balance (${previousBalance.toString()}) plus the block reward (${blockReward}).`
+            );
+          });
+          it("when mining 1000 blocks", async () => {
+            const previousBalance = await getCoinbaseBalance();
+            await this.ctx.provider.send("hardhat_mine", [
+              numberToRpcQuantity(new BN(1000)),
+            ]);
+            const currentBalance = await getCoinbaseBalance();
+            assert(
+              currentBalance.eq(previousBalance.add(blockReward.muln(1000))),
+              `expected current balance (${currentBalance.toString()}) to equal previous balance (${previousBalance.toString()}) plus (the block reward (${blockReward}) times 1000).`
+            );
+          });
+        });
       });
 
       describe("hardhat_reset", function () {

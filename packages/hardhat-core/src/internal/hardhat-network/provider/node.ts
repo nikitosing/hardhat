@@ -479,7 +479,21 @@ Hardhat Network's forking functionality only works with blocks from at least spu
       await this.mineBlock();
     } else {
       // still need multiple more blocks
+
       this._blockchain.addBlocks(remainingBlockCount, interval);
+
+      const coinbaseAddress = this.getCoinbaseAddress();
+      const blockReward = new BN("2000000000000000000");
+
+      await this.setAccountBalance(
+        coinbaseAddress,
+        (
+          await this.getAccountBalance(
+            coinbaseAddress,
+            await this.getLatestBlockNumber()
+          )
+        ).add(remainingBlockCount.mul(blockReward))
+      );
     }
   }
 
