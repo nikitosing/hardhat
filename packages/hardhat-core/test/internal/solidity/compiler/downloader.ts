@@ -1,4 +1,4 @@
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import fsExtra from "fs-extra";
 import path from "path";
 
@@ -313,6 +313,98 @@ describe("Compiler downloader", function () {
         it("Redownloads the compilers list", async function () {
           await mockDownloader.getCompilerBuild(localCompilerBuild.version);
           assert.isTrue(downloadCalled);
+        });
+      });
+    });
+
+    describe("When downloading fails", function () {
+      describe("getCompilersList", function () {
+        it("retries on a failed download", async function () {
+          let downloadCount = 0;
+          const failingDownloader = (mockDownloader = new CompilerDownloader(
+            compilersDir,
+            {
+              download: async () => {
+                if (downloadCount === 1) {
+                  await saveMockCompilersList();
+                } else {
+                  await saveMalformedCompilersList();
+                }
+
+                downloadCount++;
+              },
+              forceSolcJs: true,
+            }
+          ));
+
+          await failingDownloader.getCompilersList(CompilerPlatform.WASM);
+          assert.equal(downloadCount, 2);
+        });
+
+        it("errors on too many failed downloads", async function () {
+          let downloadCount = 0;
+          const failingDownloader = new CompilerDownloader(compilersDir, {
+            download: async () => {
+              await saveMalformedCompilersList();
+
+              downloadCount++;
+            },
+            forceSolcJs: true,
+          });
+
+          try {
+            await failingDownloader.getCompilersList(CompilerPlatform.WASM);
+          } catch (error) {
+            assert.isTrue(error instanceof SyntaxError);
+          }
+
+          assert.equal(downloadCount, 4);
+        });
+      });
+
+      describe("getCompilerBuild", function () {
+        it("retries on a failed download", async function () {
+          let downloadCount = 0;
+          const failingDownloader = (mockDownloader = new CompilerDownloader(
+            compilersDir,
+            {
+              download: async () => {
+                if (downloadCount === 1) {
+                  await saveMockCompilersList();
+                } else {
+                  await saveMalformedCompilersList();
+                }
+
+                downloadCount++;
+              },
+              forceSolcJs: true,
+            }
+          ));
+
+          await failingDownloader.getCompilerBuild(localCompilerBuild.version);
+          assert.equal(downloadCount, 2);
+        });
+
+        it("errors on too many failed downloads", async function () {
+          let downloadCount = 0;
+          const failingDownloader = new CompilerDownloader(compilersDir, {
+            download: async () => {
+              await saveMalformedCompilersList();
+
+              downloadCount++;
+            },
+            forceSolcJs: true,
+          });
+
+          try {
+            await failingDownloader.getCompilerBuild(
+              localCompilerBuild.version
+            );
+          } catch (error) {
+            assert.isTrue(error instanceof SyntaxError);
+          }
+
+          assert.equal(downloadCount, 4);
         });
       });
     });
